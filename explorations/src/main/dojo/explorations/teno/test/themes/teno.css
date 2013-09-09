@@ -1,0 +1,67 @@
+.tt-controls
+{
+	position : absolute;
+	top : 20px;
+	left : 20px;
+	font-size : 18px;
+}
+.tt-headline
+{
+	font-size : 40px;
+    position: absolute;
+    top : 90px;
+    left : 60px;
+    width : 900px;
+}
+.tt-ingress
+{
+	font-style : italic;
+	font-size : 24px;
+    position: absolute;
+    top : 160px;
+    left : 60px;
+    width : 900px;
+}
+.tt-column
+{
+	font-size : 15px;
+	line-height : 18px;
+	overflow : hidden;
+    position : absolute;
+    top : 250px;
+    width : 270px;
+    height : 630px;
+    border : 1px solid gray;
+    padding : 10px 10px 30px 10px;
+    background-color : white;
+    text-align : justify;
+}
+.tt-leftColumn
+{
+	left : 50px;
+}
+.tt-centerColumn
+{
+    left : 360px;
+}
+.tt-rightColumn
+{
+    left : 670px;
+}
+.tt-column h1
+{
+	font-size : 28px;
+	line-height : 32px;
+}
+.tt-sourceContent
+{
+	z-index : -1;
+	position : absolute;
+	left : 580px;
+	top : 30px;
+	display : block;
+	background-color : silver;
+	width : 550px;
+	padding : 30px;
+	opacity : 0.3;
+}
