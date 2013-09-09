@@ -1,10 +1,12 @@
 define([ "dojo/_base/declare",
          "dojo/_base/lang",
+         "dojo/has",
          "dojo/dom-geometry",
          "dojo/dom-construct",
          "dojo/dom-style" ],
 function( declare,
           lang,
+          has,
           domGeometry,
           domConstruct,
           domStyle ) {
@@ -30,7 +32,22 @@ function( declare,
                 domConstruct.empty( this.columns[ i ] );
             }
             var out = domConstruct.create( this.sourceNode.tagName, {});
-            this._preprocessNodes( this.sourceNode.childNodes, out );
+            try
+            {
+                this._preprocessNodes( this.sourceNode.childNodes, out );
+            }
+            catch( e )
+            {
+                if( e.message == -1 ) // there was an image that hadn't finished loading so try again in a bit
+                {
+                    setTimeout( lang.hitch( this, this.flow, srcNode, colNodes ), 200 );
+                    return;
+                }
+                else
+                {
+                    throw( e );
+                }
+            }
             this._flow( this._nodeListToArray( out.childNodes ), this._nodeListToArray( this.columns ), [{ tagName : out.tagName, attributes : this._attributesToObject( out.attributes )}] );
         },
         _flow : function( srcNodes, colNodes, wrappers )
@@ -99,7 +116,7 @@ function( declare,
             }
             else
             {
-                return this._appendNode( srcNode, destNode, colNode, true );
+                return this._appendNode( srcNode, destNode, colNode, srcNode.tagName.toUpperCase() == "SPAN" ? true : false );
             }
         },
         _nodeListToArray : function( nodeList )
@@ -140,11 +157,15 @@ function( declare,
         {
             for( var i = 0; i < nodes.length; i++ )
             {
-                if( nodes[ i ].nodeType == 1 )
+                if( nodes[ i ].nodeType == 1 ) // element
                 {
+                    if( nodes[ i ].tagName.toUpperCase() == "IMG" || nodes[ i ].tagName.toUpperCase() == "IMAGE" )
+                    {
+                        this._assertImageHasLoaded( nodes[ i ] );
+                    }
                     this._preprocessNodes( nodes[ i ].childNodes, domConstruct.place( this._copyElementWithAttrs( nodes[ i ] ), out ) );
                 }
-                else if( nodes[ i ].nodeType == 3 )
+                else if( nodes[ i ].nodeType == 3 ) // text
                 {
                     var txt = "" + nodes[ i ].textContent;
                     txt = txt.replace( /\s+/g, " " );
@@ -159,6 +180,24 @@ function( declare,
                 }
             }
             return out;
+        },
+        _assertImageHasLoaded : function( node )
+        {
+            var cb = domGeometry.getContentBox( node );
+            if( has( "ff" ) )
+            {
+                if( cb.h == 16 && cb.w == 120 )
+                {
+                    throw( new Error( -1 ) );
+                }
+            }
+            else
+            {
+                if( cb.h == 0 )
+                {
+                    throw( new Error( -1 ) );
+                }
+            }
         },
         _copyElementWithAttrs : function( node )
         {

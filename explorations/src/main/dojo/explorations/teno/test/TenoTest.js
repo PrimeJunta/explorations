@@ -15,6 +15,7 @@ function( declare,
     return declare( [ _WidgetBase, _TemplatedMixin, MultiColumnFlowController ], {
         templateString : template,
         lineHeight : 18,
+        iconSource : require.toUrl( "explorations/teno/test/themes/images/" ),
         postCreate : function()
         {
             this.flow( this.htmlContent, [ this.leftColumn, this.centerColumn, this.rightColumn ] );
