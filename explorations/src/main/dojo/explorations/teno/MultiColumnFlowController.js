@@ -11,13 +11,30 @@ function( declare,
           domConstruct,
           domStyle ) {
     return declare( [], {
+        /**
+         * Ordered list of nodes used as columns. We assume they have a fixed or otherwise limited size,
+         * which will then cause overflow to flow between them.
+         */
         columns : [],
+        /**
+         * DOM node containing the source text to flow.
+         */
         sourceNode : {},
-        constructor : function( kwObj )
+        /**
+         * Mixin keywords, e.g. columns and sourceNode.
+         */
+        constructor : function( /* Object */ kwObj )
         {
             lang.mixin( this, kwObj );
         },
-        flow : function( srcNode, colNodes )
+        /**
+         * Starts flow. If srcNode or colNodes are specified, they're put into .sourceNode and .columns;
+         * else we're using values from them. Empty each node specified in .columns, preprocess the nodes
+         * in srcNode, and _flow with the results. We also have a check for an exception thrown when
+         * preprocessing images with computed widths. This only works on some browsers some of the time
+         * and should be considered highly experimental.
+         */
+        flow : function( /* Element */ srcNode, /* Element[] */ colNodes )
         {
             if( srcNode )
             {
@@ -50,7 +67,14 @@ function( declare,
             }
             this._flow( this._nodeListToArray( out.childNodes ), this._nodeListToArray( this.columns ), [{ tagName : out.tagName, attributes : this._attributesToObject( out.attributes )}] );
         },
-        _flow : function( srcNodes, colNodes, wrappers )
+        /**
+         * The loop which controls flow from column to column. We call _placeNode on srcNodes until
+         * we get back something other than true, at which point we switch to the next column, and
+         * repeat until we're either out of columns or out of nodes to place. The idea is that 
+         * _placeNode returns either true (if the node fit), or a node containing anything that
+         * didn't fit, so we can move that to the next column.
+         */
+        _flow : function( /* Node[] */ srcNodes, /* Element[] */ colNodes, /* Object[] */ wrappers )
         {
             var colNode = colNodes.shift();
             while( srcNodes.length > 0 )
@@ -70,9 +94,11 @@ function( declare,
             }
         },
         /**
-         * Must return true or a Node.
+         * The main recursion. We drill through to the bottom level of the DOM and place nodes
+         * into destNode from that. Once they no longer fit, we create wrappers for what's left
+         * by going through the wrappers stack, and return that.
          */
-        _placeNode : function( srcNode, destNode, colNode, wrappers )
+        _placeNode : function( /* Element */ srcNode, /* Element */ destNode, /* Element */ colNode, /* Object[] */ wrappers )
         {
             if( this._hasChildElems( srcNode ) )
             {
@@ -119,7 +145,12 @@ function( declare,
                 return this._appendNode( srcNode, destNode, colNode, srcNode.tagName.toUpperCase() == "SPAN" ? true : false );
             }
         },
-        _nodeListToArray : function( nodeList )
+        /**
+         * Utility method that puts all nodes in nodeList into an Array and returns it. We want this
+         * because we will want to e.g. concatenate lists of nodes we're dealing with, and we can't
+         * do that with nodeLists.
+         */
+        _nodeListToArray : function( /* NodeList */ nodeList )
         {
             var out = [];
             for( var i = 0; i < nodeList.length; i++ )
@@ -128,7 +159,13 @@ function( declare,
             }
             return out;
         },
-        _appendNode : function( node, destNode, columnNode, onlyText )
+        /**
+         * Injects node into destNode, checks that columnNode _hasRoom. If onlyText, places the text
+         * content of node rather than the node itself. We do this to get rid of the <span> wrappers
+         * we added in preprocessing. We need the spans because the browser might merge consecutive
+         * text nodes into one, which would stop things from flowing.
+         */
+        _appendNode : function( /* Node */ node, /* Element */ destNode, /* Element */ columnNode, /* boolean */ onlyText )
         {
             var _n = onlyText ? document.createTextNode( node.textContent ) : node;
             destNode.appendChild( _n );
@@ -142,7 +179,10 @@ function( declare,
                 return node;
             }
         },
-        _hasChildElems : function( node )
+        /**
+         * If node has child elements (as opposed to text nodes etc.), returns true, else returns false.
+         */
+        _hasChildElems : function( /* Element */ node )
         {
             for( var i = 0; i < node.childNodes.length; i++ )
             {
@@ -153,7 +193,11 @@ function( declare,
             }
             return false;
         },
-        _preprocessNodes : function( nodes, out )
+        /**
+         * Drills down to text content level, and splits it into <span>s by word. If it hits image tags,
+         * tries to check that the image has loaded.
+         */
+        _preprocessNodes : function( /* Node[] */ nodes, /* Element */ out )
         {
             for( var i = 0; i < nodes.length; i++ )
             {
@@ -181,7 +225,10 @@ function( declare,
             }
             return out;
         },
-        _assertImageHasLoaded : function( node )
+        /**
+         * Looks at the geometry of node and tries to guess if the image it contains has loaded. Unreliable.
+         */
+        _assertImageHasLoaded : function( /* Element */ node )
         {
             var cb = domGeometry.getContentBox( node );
             if( has( "ff" ) )
@@ -199,7 +246,10 @@ function( declare,
                 }
             }
         },
-        _copyElementWithAttrs : function( node )
+        /**
+         * Creates a node with the same attributes as the argument node, and returns it.
+         */
+        _copyElementWithAttrs : function( /* Element */ node )
         {
             var _n = domConstruct.create( node.tagName, {} );
             for( var i = 0; i < node.attributes.length; i++ )
@@ -208,7 +258,10 @@ function( declare,
             }
             return _n;
         },
-        _attributesToObject : function( attrs )
+        /**
+         * Utility method that converts a DOM attribute map to a keyword object.
+         */
+        _attributesToObject : function( /* NamedNodeMap */ attrs )
         {
             var out = {};
             for( var i = 0; i < attrs.length; i++ )
@@ -217,7 +270,11 @@ function( declare,
             }
             return out;
         },
-        _hasRoom : function( node )
+        /**
+         * Checks if node's margin box is bigger than node's parent's content box. If so, returns false,
+         * else returns true.
+         */
+        _hasRoom : function( /* Node */ node )
         {
             var cBox = domGeometry.getMarginBox( node );
             var mBox = domGeometry.getContentBox( node.parentNode );
