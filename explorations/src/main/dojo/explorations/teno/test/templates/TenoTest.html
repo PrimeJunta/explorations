@@ -6,14 +6,19 @@
   <div class="tt-column tt-leftColumn">
     <div data-dojo-attach-point="leftColumn"></div>
   </div>
-  <div class="tt-column tt-centerColumn">
-    <div data-dojo-attach-point="centerColumn"></div>
+  <div class="tt-column tt-centerLeftColumn">
+    <div data-dojo-attach-point="centerLeftColumn"></div>
+  </div>
+  <div class="tt-column tt-centerRightColumn">
+    <div data-dojo-attach-point="centerRightColumn"></div>
   </div>
   <div class="tt-column tt-rightColumn">
     <div data-dojo-attach-point="rightColumn"></div>
   </div>
   <div class="tt-controls">
-    Line-height: <button data-dojo-attach-event="onClick:increaseLineHeight">+</button> <button data-dojo-attach-event="onClick:decreaseLineHeight">-</button>
+    Line-height:
+    <button data-dojo-attach-event="onClick:increaseLineHeight">+</button>
+    <button data-dojo-attach-event="onClick:decreaseLineHeight">-</button>
   </div>
   <div data-dojo-attach-point="htmlContent" class="tt-sourceContent">
     <h1>How does this work?</h1>
@@ -31,13 +36,22 @@
       anything whether it worked or not, and stepping back if it didn't.
       The results might not look identical across all browsers, but the
       flow will work.</p>
+    <img src="${iconSource}/samuel-l-jackson.jpg"
+      style="width: 100%; height: auto;" alt="Samuel L. Jackson" />
+
+    <p>Flowing images with computed sizes is problematic and doesn't
+      always work. To really make it robust I'd have to add a timeout
+      every time after injecting an image and check the DOM only after
+      it's expired. This would require making the flow algorithm
+      asynchronous, which would slow things down a good deal. You can
+      avoid this by specifying a fixed height and width for any in-flow
+      images in the source data.</p>
     <h1>What's Not In</h1>
-    <p>This is a poorly-optimized proof of concept and no doubt has a
-      bunch of bugs. I believe the principle is sound though.</p>
+    <p>This is a poorly-optimized proof of concept and no doubt has
+      a bunch of bugs. I believe the principle is sound though.</p>
     <p>
       And now, <a href="http://slipsum.com/">Samuel L. Ipsum.</a>
     </p>
-    <img src="${iconSource}/samuel-l-jackson.jpg" style="width:100%;height:auto;" alt="Samuel L. Jackson"/>
     <!-- start slipsum code -->
     <h1>We happy?</h1>
     <p>Now that there is the Tec-9, a crappy spray gun from South
@@ -47,20 +61,25 @@
       crime. Like they're actually proud of that shit.</p>
 
     <h1>Uuummmm, this is a tasty burger!</h1>
-    <p>Now that there is the Tec-9, a crappy spray gun from South
-      Miami. This gun is advertised as the most popular gun in American
-      crime. Do you believe that shit? It actually says that in the
-      little book that comes with it: the most popular gun in American
-      crime. Like they're actually proud of that shit.</p>
+    <p
+      style="background-color: #e4e4e4; padding: 10px; border: 1px solid silver;">Now
+      that there is the Tec-9, a crappy spray gun from South Miami. This
+      gun is advertised as the most popular gun in American crime. Do
+      you believe that shit? It actually says that in the little book
+      that comes with it: the most popular gun in American crime. Like
+      they're actually proud of that shit.</p>
 
     <h1>No man, I don't eat pork</h1>
-    <p style="background-color:#e4e4e4;padding:10px;border:1px solid silver;">Well, the way they make shows is, they make one show. That
+    <p>Well, the way they make shows is, they make one show. That
       show's called a pilot. Then they show that show to the people who
       make shows, and on the strength of that one show they decide if
       they're going to make more shows. Some pilots get picked and
       become television programs. Some don't, become nothing. She
       starred in one of the ones that became nothing.</p>
-
+    <div style="text-align: center">
+      <img src="${iconSource}/samuel-l-jackson.jpg"
+        style="width: auto; height: 250px;" alt="Samuel L. Jackson" />
+    </div>
     <h1>Hold on to your butts</h1>
 
     <p>Do you see any Teletubbies in here? Do you see a slender

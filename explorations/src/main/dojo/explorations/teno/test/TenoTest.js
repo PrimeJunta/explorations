@@ -18,7 +18,7 @@ function( declare,
         iconSource : require.toUrl( "explorations/teno/test/themes/images/" ),
         postCreate : function()
         {
-            this.flow( this.htmlContent, [ this.leftColumn, this.centerColumn, this.rightColumn ] );
+            this.flow( this.htmlContent, [ this.leftColumn, this.centerLeftColumn, this.centerRightColumn, this.rightColumn ] );
         },
         increaseLineHeight : function()
         {

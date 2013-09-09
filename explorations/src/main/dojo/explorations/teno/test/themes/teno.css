@@ -40,13 +40,17 @@
 {
 	left : 50px;
 }
-.tt-centerColumn
+.tt-centerLeftColumn
 {
     left : 360px;
 }
-.tt-rightColumn
+.tt-centerRightColumn
 {
     left : 670px;
+}
+.tt-rightColumn
+{
+	left : 980px;
 }
 .tt-column h1
 {
