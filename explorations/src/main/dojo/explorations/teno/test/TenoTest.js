@@ -77,7 +77,7 @@ function( declare,
             if( this._hasChildElems( srcNode ) )
             {
                 // create wrapper for it
-                var _wrapperNode = domConstruct.create( srcNode.tagName, {} );
+                var _wrapperNode = this._cloneElementWithAttrs( srcNode ); // domConstruct.create( srcNode.tagName, {} );
                 wrapperTags = wrapperTags.concat( srcNode.tagName );
                 if( this._appendNode( _wrapperNode, destNode, colNode ) !== true )
                 {
@@ -140,11 +140,6 @@ function( declare,
                 return node;
             }
         },
-        _extractNode : function( node )
-        {
-            node.parentNode.removeChild( node );
-            return node;
-        },
         _hasChildElems : function( node )
         {
             for( var i = 0; i < node.childNodes.length; i++ )
@@ -162,7 +157,7 @@ function( declare,
             {
                 if( nodes[ i ].nodeType == 1 )
                 {
-                    this._preprocessNodes( nodes[ i ].childNodes, domConstruct.create( nodes[ i ].tagName, {}, out ) );
+                    this._preprocessNodes( nodes[ i ].childNodes, domConstruct.place( this._cloneElementWithAttrs( nodes[ i ] ), out ) );
                 }
                 else if( nodes[ i ].nodeType == 3 )
                 {
@@ -179,6 +174,15 @@ function( declare,
                 }
             }
             return out;
+        },
+        _cloneElementWithAttrs : function( node )
+        {
+            var _n = domConstruct.create( node.tagName, {} );
+            for( var i = 0; i < node.attributes.length; i++ )
+            {
+                _n.setAttribute( node.attributes[ i ].name, node.attributes[ i ].value );
+            }
+            return _n;
         },
         _hasRoom : function( node )
         {
