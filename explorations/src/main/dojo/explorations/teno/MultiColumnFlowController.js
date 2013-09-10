@@ -15,7 +15,7 @@ function( declare,
          * Ordered list of nodes used as columns. We assume they have a fixed or otherwise limited size,
          * which will then cause overflow to flow between them.
          */
-        columns : [],
+        columnNodes : [],
         /**
          * DOM node containing the source text to flow.
          */
@@ -42,11 +42,11 @@ function( declare,
             }
             if( colNodes )
             {
-                this.columns = colNodes;
+                this.columnNodes = colNodes;
             }
-            for( var i = 0; i < this.columns.length; i++ )
+            for( var i = 0; i < this.columnNodes.length; i++ )
             {
-                domConstruct.empty( this.columns[ i ] );
+                domConstruct.empty( this.columnNodes[ i ] );
             }
             var out = domConstruct.create( this.sourceNode.tagName, {});
             try
@@ -65,7 +65,7 @@ function( declare,
                     throw( e );
                 }
             }
-            this._flow( this._nodeListToArray( out.childNodes ), this._nodeListToArray( this.columns ), [{ tagName : out.tagName, attributes : this._attributesToObject( out.attributes )}] );
+            this._flow( this._nodeListToArray( out.childNodes ), this._nodeListToArray( this.columnNodes ), [{ tagName : out.tagName, attributes : this._attributesToObject( out.attributes )}] );
         },
         /**
          * The loop which controls flow from column to column. We call _placeNode on srcNodes until
@@ -231,16 +231,14 @@ function( declare,
         _assertImageHasLoaded : function( /* Element */ node )
         {
             var cb = domGeometry.getContentBox( node );
-            if( has( "ff" ) )
+            console.log( "ouch, image", cb );
+            if( cb.h == 0 )
+            {
+                throw( new Error( -1 ) );
+            }
+            else if( has( "ff" ) )
             {
                 if( cb.h == 16 && cb.w == 120 )
-                {
-                    throw( new Error( -1 ) );
-                }
-            }
-            else
-            {
-                if( cb.h == 0 )
                 {
                     throw( new Error( -1 ) );
                 }

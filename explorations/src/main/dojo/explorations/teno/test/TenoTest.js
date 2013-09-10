@@ -23,18 +23,18 @@ function( declare,
         increaseLineHeight : function()
         {
             this.lineHeight++;
-            for( var i = 0; i < this.columns.length; i++ )
+            for( var i = 0; i < this.columnNodes.length; i++ )
             {
-                domStyle.set( this.columns[ i ], "lineHeight", "" + this.lineHeight + "px" );
+                domStyle.set( this.columnNodes[ i ], "lineHeight", "" + this.lineHeight + "px" );
             }
             this.flow();
         },
         decreaseLineHeight : function()
         {
             this.lineHeight--;
-            for( var i = 0; i < this.columns.length; i++ )
+            for( var i = 0; i < this.columnNodes.length; i++ )
             {
-                domStyle.set( this.columns[ i ], "lineHeight", "" + this.lineHeight + "px" );
+                domStyle.set( this.columnNodes[ i ], "lineHeight", "" + this.lineHeight + "px" );
             }
             this.flow();
         }
