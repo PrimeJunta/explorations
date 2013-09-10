@@ -5,8 +5,10 @@ define([ "dojo/_base/declare",
          "dojo/dom-class",
          "dojo/dom-style",
          "dojo/on",
-         "dijit/_WidgetBase",
          "dijit/layout/ContentPane",
+         "dijit/_WidgetBase",
+         "dijit/_Container",
+         "dijit/layout/_ContentPaneResizeMixin",
          "./MultiColumnFlowController" ],
 function( declare,
           lang,
@@ -15,22 +17,21 @@ function( declare,
           domClass,
           domStyle,
           on,
-          _WidgetBase,
           ContentPane,
+          _WidgetBase,
+          _Container,
+          _ContentPaneResizeMixin,
           MultiColumnFlowController)
 {
-    return declare([ _WidgetBase ], {
+    return declare([ _WidgetBase, _Container, _ContentPaneResizeMixin ], {
         columns : 2,
         gutter : 30,
         startup : function()
         {
             this.inherited( arguments );
-            this._setBox();
             this._events = [];
             this._setupSource();
             this._controller = new MultiColumnFlowController();
-            this.flow();
-            this._events.push( on( window, "resize", lang.hitch( this, this._waitToResize ) ) );
         },
         flow : function()
         {
@@ -47,45 +48,60 @@ function( declare,
         },
         _setupColumns : function()
         {
-            domConstruct.empty( this.domNode );
-            this._box = domGeometry.getContentBox( this.domNode );
+            domConstruct.empty( this.containerNode );
+            this._box = domGeometry.getContentBox( this.containerNode );
             var cWidth = ( this._box.w - this.gutter * ( this.columns - 1 ) ) / this.columns;
             this._columnNodes = [];
             for( var i = 0; i < this.columns; i++ )
             {
+                var className = "multiColumnContentDiv";
+                if( i == 0 )
+                {
+                    className += " multiColumnLeftColumn";
+                }
+                if( i == this.columns - 1 )
+                {
+                    className += " multiColumnRightColumn";
+                }
                 var _cc = domConstruct.create( "div", {
-                    "class" : "multiColumnContentDiv",
+                    "class" : className,
                     "style" : "position:absolute;top:0px;height:100%;left:" + i * ( cWidth + this.gutter ) + "px;width:" + cWidth + "px;"
-                }, this.domNode );
-                this._columnNodes.push( domConstruct.create( "div", { style : "padding:1px;"}, _cc ) );
+                }, this.containerNode );
+                this._columnNodes.push( domConstruct.create( "div", { style : "padding:1px;" }, _cc ) ); // adding 1 px padding to deal with boundary condition
             }
         },
         _flow : function()
         {
+            if( this._working )
+            {
+                this._waitToReflow(); // somebody resized the window while we were flowing, which means it'll be broken so we need to try again
+                return;
+            }
+            this._working = true;
             this._controller.flow( this._sourceNode, this._columnNodes );
+            this._working = false;
         },
-        _waitToResize : function()
+        _waitToReflow : function()
         {
             if( this._rto )
             {
                 clearTimeout( this._rto );
             }
-            this._rto = setTimeout( lang.hitch( this, this.resize ), 100 );
+            this._rto = setTimeout( lang.hitch( this, this._reflow ), 200 );
         },
-        _setBox : function()
+        _reflow : function()
         {
-            var _box = domGeometry.getContentBox( this.domNode.parentNode );
-            domGeometry.setMarginBox( this.domNode, _box );
-        },
-        resize : function()
-        {
-            this._setBox();
-            var box = domGeometry.getMarginBox( this.domNode );
+            var box = domGeometry.getContentBox( this.containerNode );
             if( !this._box || box.w != this._box.w || box.h != this._box.h )
             {
                 this._setupColumns();
                 this._flow();
             }
+        },
+        resize : function()
+        {
+            this.inherited( arguments );
+            this._waitToReflow();
         },
         destroy : function()
         {

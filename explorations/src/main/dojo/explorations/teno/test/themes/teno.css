@@ -78,6 +78,15 @@ body, html
 	padding : 30px;
 	opacity : 0.3;
 }
+.multiColumnContentDiv
+{
+	padding : 0px 5px 0px 5px;
+	border-right : 1px solid gray;
+}
+.multiColumnRightColumn
+{
+	border-right : none;
+}
 /* Flow widget test */
 .__fw-flowContainer
 {

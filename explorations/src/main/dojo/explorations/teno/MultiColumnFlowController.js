@@ -20,6 +20,8 @@ function( declare,
          * DOM node containing the source text to flow.
          */
         sourceNode : {},
+        imageLoadTries : 30,
+        imageLoadInterval : 1000,
         /**
          * Mixin keywords, e.g. columns and sourceNode.
          */
@@ -65,7 +67,24 @@ function( declare,
                     throw( e );
                 }
             }
-            this._flow( this._nodeListToArray( out.childNodes ), this._nodeListToArray( this.columnNodes ), [{ tagName : out.tagName, attributes : this._attributesToObject( out.attributes )}] );
+            this._flow( this._nodeListToArray( out.childNodes ), this._nodeListToArray( this.columnNodes ) );
+            var tries = this.imageLoadTries;
+            while( tries > 0 )
+            {
+                setTimeout( lang.hitch( this, this.checkLayout ), tries * this.imageLoadInterval );
+                tries--;
+            }
+        },
+        checkLayout : function()
+        {
+            if( this._layoutIsOK() )
+            {
+                return;
+            }
+            else
+            {
+                this._flow();
+            }
         },
         /**
          * The loop which controls flow from column to column. We call _placeNode on srcNodes until
@@ -74,16 +93,20 @@ function( declare,
          * _placeNode returns either true (if the node fit), or a node containing anything that
          * didn't fit, so we can move that to the next column.
          */
-        _flow : function( /* Node[] */ srcNodes, /* Element[] */ colNodes, /* Object[] */ wrappers )
+        _flow : function( /* Node[] */ srcNodes, /* Element[] */ colNodes )
         {
             var colNode = colNodes.shift();
             while( srcNodes.length > 0 )
             {
                 var node = srcNodes.shift();
-                var reslt = this._placeNode( node, colNode, colNode, wrappers );
-                if( reslt !== true ) // some or all didn't fit
+                if( node.parentNode )
                 {
-                    srcNodes = [ reslt ].concat( srcNodes );
+                    node.parentNode.removeChild( node );
+                }
+                var reslt = this._placeNode( node, colNode, colNode );
+                if( reslt.result !== true ) // some or all didn't fit
+                {
+                    srcNodes = [ reslt.overflow ].concat( srcNodes );
                     colNode = colNodes.shift();
                     if( !colNode ) // we're out of columns
                     {
@@ -98,64 +121,117 @@ function( declare,
          * into destNode from that. Once they no longer fit, we create wrappers for what's left
          * by going through the wrappers stack, and return that.
          */
-        _placeNode : function( /* Element */ srcNode, /* Element */ destNode, /* Element */ colNode, /* Object[] */ wrappers )
+        _placeNode : function( /* Element */ srcNode, /* Element */ destNode, /* Element */ colNode )
         {
             if( this._hasChildElems( srcNode ) )
             {
                 // create wrapper for it
                 var _wrapperNode = this._copyElementWithAttrs( srcNode ); // domConstruct.create( srcNode.tagName, {} );
-                wrappers = wrappers.concat({ tagName : srcNode.tagName, attributes : this._attributesToObject( srcNode.attributes )});
                 if( this._appendNode( _wrapperNode, destNode, colNode ) !== true )
                 {
                     // no room for even the wrapper, so return srcNode
-                    return srcNode;
+                    return {
+                        result : false,
+                        overflow : srcNode,
+                        destNode : destNode
+                    };
                 }
-                else
+                // we have a wrapper node inside destNode
+                var _cn = this._nodeListToArray( srcNode.childNodes );
+                while( _cn.length > 0 )
                 {
-                    // now _wrapperNode is in destNode, so let's recurse
-                    var _cn = this._nodeListToArray( srcNode.childNodes );
-                    while( _cn.length > 0 )
+                    var curNode = _cn.shift();
+                    var reslt = this._placeNode( curNode, _wrapperNode, colNode );
+
+                    if( reslt.result !== true )
                     {
-                        var curNode = _cn.shift();
-                        var _reslt = this._placeNode( curNode, _wrapperNode, colNode, wrappers );
-                        if( _reslt !== true )
+                        // some of them didn't fit, so 
+                        // add remaining nodes to reslt.destNode and return it
+                        while( _cn.length > 0 )
                         {
-                            // it didn't fit, so create a set of rootless wrappers and put it and rest of _cn in it, and return.
-                            var _wd = wrappers.shift();
-                            var _outWrapperNode = domConstruct.create( _wd.tagName, _wd.attributes );
-                            var _outDestNode = _outWrapperNode;
-                            while( wrappers.length > 0 )
-                            {
-                                _wd = wrappers.shift();
-                                _outDestNode = domConstruct.create( _wd.tagName, _wd.attributes, _outDestNode );
-                            }
-                            _outDestNode.appendChild( curNode );
-                            while( _cn.length > 0 )
-                            {
-                                _outDestNode.appendChild( _cn.shift() );
-                            }
-                            return _outDestNode;
+                            reslt.destNode.appendChild( _cn.shift() );
                         }
+                        // all siblings have been placed, so go up a level and return
+                        reslt.destNode = reslt.destNode.parentNode;
+                        return reslt;
                     }
-                    return true; // loop completed
+                }
+
+                return {
+                    result : true
                 }
             }
             else
             {
-                return this._appendNode( srcNode, destNode, colNode, srcNode.tagName.toUpperCase() == "SPAN" ? true : false );
+                var wrappers = [];
+                wrappers = this._getWrappers( srcNode.parentNode, [] );
+                var reslt = this._appendNode( srcNode, destNode, colNode, srcNode.tagName.toUpperCase() == "SPAN" ? true : false );
+                if( reslt !== true )
+                {
+                    var _wd = wrappers.shift();
+                    var _outWrapperNode = domConstruct.create( _wd.tagName, _wd.attributes );
+                    var _outDestNode = _outWrapperNode;
+                    while( wrappers.length > 0 )
+                    {
+                        _wd = wrappers.shift();
+                        _outDestNode = domConstruct.create( _wd.tagName, _wd.attributes, _outDestNode );
+                    }
+                    _outDestNode.appendChild( srcNode );
+                    return {
+                        result : false,
+                        overflow : _outWrapperNode,
+                        destNode : _outDestNode
+                    }
+                }
+                else
+                {
+                    return {
+                        result : true
+                    }
+                }
             }
+        },
+        _getWrappers : function( node, wrappers )
+        {
+            if( !node )
+            {
+                return wrappers;
+            }
+            wrappers.unshift( this._getWrapperObject( node ) );
+            if( node.parentNode )
+            {
+                return this._getWrappers( node.parentNode, wrappers );
+            }
+            else
+            {
+                return wrappers;
+            }
+        },
+        _getWrapperObject : function( node )
+        {
+            return {
+                tagName : node.tagName,
+                attributes : lang.mixin( this._attributesToObject( node.attributes ), { "data-wrapper-object" : "true" } )
+            };
         },
         /**
          * Utility method that puts all nodes in nodeList into an Array and returns it. We want this
          * because we will want to e.g. concatenate lists of nodes we're dealing with, and we can't
          * do that with nodeLists.
          */
-        _nodeListToArray : function( /* NodeList */ nodeList )
+        _nodeListToArray : function( /* NodeList */ nodeList, remove )
         {
             var out = [];
             for( var i = 0; i < nodeList.length; i++ )
             {
-                out.push( nodeList[ i ] );
+                if( remove )
+                {
+                    out.push( nodeList[ i ].parentNode.removeChild( nodeList[ i ] ) );
+                }
+                else
+                {
+                    out.push( nodeList[ i ] );
+                }
             }
             return out;
         },
@@ -167,6 +243,7 @@ function( declare,
          */
         _appendNode : function( /* Node */ node, /* Element */ destNode, /* Element */ columnNode, /* boolean */ onlyText )
         {
+            onlyText = false;
             var _n = onlyText ? document.createTextNode( node.textContent ) : node;
             destNode.appendChild( _n );
             if( this._hasRoom( columnNode ) )
@@ -231,7 +308,6 @@ function( declare,
         _assertImageHasLoaded : function( /* Element */ node )
         {
             var cb = domGeometry.getContentBox( node );
-            console.log( "ouch, image", cb );
             if( cb.h == 0 )
             {
                 throw( new Error( -1 ) );
@@ -267,6 +343,20 @@ function( declare,
                 out[ attrs[ i ].name ] = attrs[ i ].value;
             }
             return out;
+        },
+        /**
+         * Checks that all columns are OK.
+         */
+        _layoutIsOK : function()
+        {
+            for( var i = 0; i < this.columnNodes.length; i++ )
+            {
+                if( !this._hasRoom( this.columnNodes[ i ] ) )
+                {
+                    return false;
+                }
+            }
+            return true;
         },
         /**
          * Checks if node's margin box is bigger than node's parent's content box. If so, returns false,

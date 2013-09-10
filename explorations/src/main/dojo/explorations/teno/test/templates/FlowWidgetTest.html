@@ -3,26 +3,28 @@
     style="width: 100%; height: 100%;">
     <div data-dojo-type="dijit/layout/ContentPane"
       data-dojo-props="region:'top'">
-      <h1>Multi-Column Flow Widget Demo</h1>
+      <div style="float:right">
+        <div>
+          <input type="number" size="3"
+            data-dojo-attach-point="columnsInput" value="${columns}" />
+          columns
+        </div>
+        <div>
+          <input type="number" size="3"
+            data-dojo-attach-point="gutterInput" value="${gutter}" />
+          gutter (px)
+        </div>
+        <button data-dojo-attach-event="onClick:setProperties">Set</button>
+      </div>
+      <h1 style="font-size : 40px;">Multi-Column Flow Widget Demo</h1>
       <p>
         With thanks to <a href="http://slipsum.com/">Samuel L.
           Ipsum.</a>
       </p>
-      <div>
-        <input type="number" size="3"
-          data-dojo-attach-point="columnsInput" value="${columns}" />
-        columns
-      </div>
-      <div>
-        <input type="number" size="3"
-          data-dojo-attach-point="gutterInput" value="${gutter}" />
-        gutter (px)
-      </div>
-      <button data-dojo-attach-event="onClick:setProperties">Set</button>
 
     </div>
-    <div data-dojo-type="dijit/layout/ContentPane"
-      data-dojo-props="region:'center'">
+    <!--  div data-dojo-type="dijit/layout/ContentPane"
+      data-dojo-props="region:'center'"-->
       <div data-dojo-attach-point="columnWidget"
         data-dojo-type="explorations/teno/MultiColumnContainer"
         data-dojo-props="region:'center',columns:${columns},gutter:${gutter}">
@@ -123,9 +125,9 @@
             <a href="http://slipsum.com">lorem ipsum</a>
           </div>
 
-          <!-- end slipsum code -->
+          <!-- end slipsum code
 
-        </div>
+        </div>  -->
       </div>
     </div>
   </div>
