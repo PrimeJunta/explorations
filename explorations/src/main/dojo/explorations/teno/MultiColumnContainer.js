@@ -5,6 +5,7 @@ define([ "dojo/_base/declare",
          "dojo/dom-class",
          "dojo/dom-style",
          "dojo/on",
+         "dojo/topic",
          "dijit/registry",
          "dijit/layout/ContentPane",
          "dijit/_WidgetBase",
@@ -18,6 +19,7 @@ function( declare,
           domClass,
           domStyle,
           on,
+          topic,
           registry,
           ContentPane,
           _WidgetBase,
@@ -31,17 +33,39 @@ function( declare,
         continuation : "",
         sourceNode : {},
         isContinuation : false,
+        postMixInProperties : function()
+        {
+            this.inherited( arguments );
+            this._events = [];
+        },
         startup : function()
         {
             this.inherited( arguments );
-            if( !this.isContinuation )
+            if( this.continuation && lang.isString( this.continuation ) )
+            {
+                this._events.push( topic.subscribe( "/ContinuationReady/" + this.continuation, lang.hitch( this, this.setupContinuation ) ) );
+            }
+            if( this.isContinuation )
+            {
+                topic.publish( "/ContinuationReady/" + this.id );
+            }
+            else
             {
                 this.startFlow();
             }
         },
+        setupContinuation : function()
+        {
+            this.continuation = registry.byId( this.continuation );
+            this._continuationReady = true;
+            if( this._continuationNodes )
+            {
+                this.continuation.continueFlow( this._continuationNodes );
+                delete this._continuationNodes;
+            }
+        },
         startFlow : function()
         {
-            this._events = [];
             this._setupSource();
             this._controller = new MultiColumnFlowController();
             this.flow();
@@ -52,21 +76,18 @@ function( declare,
             var reslt = this._flow();
             if( this.continuation && reslt.result == "incomplete" )
             {
-                setTimeout( lang.hitch( this, this.flowIntoContinuation, reslt.overflow ), 500 )
+                this.flowIntoContinuation( reslt.overflow );
             }
         },
         flowIntoContinuation : function( nodes )
         {
-            if( this.continuation )
-            {
-                if( lang.isString( this.continuation ) )
-                {
-                    this.continuation = registry.byId( this.continuation );
-                }
-            }
-            if( this.continuation.continueFlow )
+            if( this._continuationReady )
             {
                 this.continuation.continueFlow( nodes );
+            }
+            else
+            {
+                this._continuationNodes = nodes;
             }
         },
         continueFlow : function( nodes )
