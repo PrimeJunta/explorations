@@ -2,19 +2,22 @@
 <html>
   <head>
   <title>Flow test</title>
+  <!-- 
     <link rel="stylesheet" type="text/css"
       href="explorations/teno/test/themes/teno.css" />
+  
+   -->
     <script type="text/javascript" src="dojo/dojo.js"
       data-dojo-config="debug: true, async: true, parseOnLoad: true"></script>
     <script type="text/javascript">
         require( [ "dojo/parser", "explorations/teno/MultiColumnContainer" ] );
     </script>
   </head>
-  <body style="padding:50px;">
+  <body style="padding:50px;overflow:auto;">
     <h1>Really Simple Multi-Column Container Demo</h1>
     <div data-dojo-type="explorations/teno/MultiColumnContainer"
-      data-dojo-props="columns:4,gutter:30"
-      style="position: absolute; top: 150px; left: 50px; width: 900px; height: 600px;">
+      data-dojo-props="columns:3,gutter:30,continuation:'container2'"
+      style="position: absolute; top: 150px; left: 50px; width: 600px; height: 600px;">
       <div style="padding: 10px">
         <h1>How does this work?</h1>
         <p>I recurse through the source text, break up all text nodes
@@ -106,5 +109,16 @@
         </div>
       </div>
     </div>
+    <div data-dojo-type="explorations/teno/MultiColumnContainer"
+      data-dojo-props="columns:2,gutter:30,continuation:'container3',isContinuation:true"
+      id="container2"
+      style="position: absolute; top: 250px; left: 800px; width: 600px; height: 700px;background-color:pink;z-index:999">
+    </div>
+        <div data-dojo-type="explorations/teno/MultiColumnContainer"
+      data-dojo-props="columns:4,gutter:30,isContinuation:true"
+      id="container3"
+      style="position: absolute; top: 850px; left: 150px; width: 900px; height: 600px;background-color:#ffffcc">
+    </div>
+    
   </body>
 </html>

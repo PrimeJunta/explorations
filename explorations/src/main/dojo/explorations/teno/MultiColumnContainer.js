@@ -5,6 +5,7 @@ define([ "dojo/_base/declare",
          "dojo/dom-class",
          "dojo/dom-style",
          "dojo/on",
+         "dijit/registry",
          "dijit/layout/ContentPane",
          "dijit/_WidgetBase",
          "dijit/_Container",
@@ -17,6 +18,7 @@ function( declare,
           domClass,
           domStyle,
           on,
+          registry,
           ContentPane,
           _WidgetBase,
           _Container,
@@ -26,9 +28,19 @@ function( declare,
     return declare([ _WidgetBase, _Container, _ContentPaneResizeMixin ], {
         columns : 2,
         gutter : 30,
+        continuation : "",
+        sourceNode : {},
+        isContinuation : false,
         startup : function()
         {
             this.inherited( arguments );
+            if( !this.isContinuation )
+            {
+                this.startFlow();
+            }
+        },
+        startFlow : function()
+        {
             this._events = [];
             this._setupSource();
             this._controller = new MultiColumnFlowController();
@@ -37,14 +49,52 @@ function( declare,
         flow : function()
         {
             this._setupColumns();
-            this._flow();
+            var reslt = this._flow();
+            if( this.continuation && reslt.result == "incomplete" )
+            {
+                setTimeout( lang.hitch( this, this.flowIntoContinuation, reslt.overflow ), 500 )
+            }
+        },
+        flowIntoContinuation : function( nodes )
+        {
+            if( this.continuation )
+            {
+                if( lang.isString( this.continuation ) )
+                {
+                    this.continuation = registry.byId( this.continuation );
+                }
+            }
+            if( this.continuation.continueFlow )
+            {
+                this.continuation.continueFlow( nodes );
+            }
+        },
+        continueFlow : function( nodes )
+        {
+            this.sourceNode = domConstruct.create( "div", {} );
+            while( nodes.length > 0 )
+            {
+                this.sourceNode.appendChild( nodes.shift() );
+            }
+            this.startFlow();
         },
         _setupSource : function()
         {
-            this._sourceNode = domConstruct.create( "div", { style : "z-index:-1;position:absolute;top:0px;left:0px;width:100%;height:100%;visibility:hidden;" }, document.body );
-            while( this.domNode.childNodes.length > 0 )
+            if( this._sourceNode )
             {
-                this._sourceNode.appendChild( this.domNode.removeChild( this.domNode.firstChild ) );
+                domConstruct.empty( this._sourceNode );
+            }
+            else
+            {
+                this._sourceNode = domConstruct.create( "div", { style : "z-index:-1;position:absolute;top:0px;left:0px;width:100%;height:100%;visibility:hidden;" }, document.body );
+            }
+            if( !this.sourceNode.nodeType )
+            {
+                this.sourceNode = this.domNode;
+            }
+            while( this.sourceNode.childNodes.length > 0 )
+            {
+                this._sourceNode.appendChild( this.sourceNode.removeChild( this.sourceNode.firstChild ) );
             }
         },
         _setupColumns : function()
@@ -79,8 +129,9 @@ function( declare,
                 return;
             }
             this._working = true;
-            this._controller.flow( this._sourceNode, this._columnNodes );
+            var reslt = this._controller.flow( this._sourceNode, this._columnNodes );
             this._working = false;
+            return reslt;
         },
         _waitToReflow : function()
         {

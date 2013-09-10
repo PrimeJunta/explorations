@@ -69,7 +69,7 @@ function( declare,
                 }
             }
             this._timeouts = [];
-            this._flow( this._nodeListToArray( lang.clone( this._preprocessedNodes ).childNodes ), this._nodeListToArray( this.columnNodes ) );
+            return this._flow( this._nodeListToArray( lang.clone( this._preprocessedNodes ).childNodes ), this._nodeListToArray( this.columnNodes ) );
         },
         checkLayout : function()
         {
@@ -98,7 +98,7 @@ function( declare,
         {
             if( this._working )
             {
-                return;
+                return { result : "working" };
             }
             this._working = true;
             for( var i = 0; i < colNodes.length; i++ )
@@ -123,16 +123,15 @@ function( declare,
                     colNode = colNodes[ colIdx ];
                     if( !colNode ) // we're out of columns
                     {
-                        console.log( "Out of columns" );
                         this._working = false;
                         this._setupImageLoadInterval();
-                        return;
+                        return { result : "incomplete", overflow : srcNodes };
                     }
                 }
             }
-            console.log( "Out of nodes" );
             this._working = false;
             this._setupImageLoadInterval();
+            return { result : "complete" };
         },
         _setupImageLoadInterval : function()
         {
