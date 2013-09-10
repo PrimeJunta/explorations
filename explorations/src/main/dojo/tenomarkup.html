@@ -2,11 +2,6 @@
 <html>
   <head>
   <title>Flow test</title>
-  <!-- 
-    <link rel="stylesheet" type="text/css"
-      href="explorations/teno/test/themes/teno.css" />
-  
-   -->
     <script type="text/javascript" src="dojo/dojo.js"
       data-dojo-config="debug: true, async: true, parseOnLoad: true"></script>
     <script type="text/javascript">
@@ -14,9 +9,9 @@
     </script>
   </head>
   <body style="padding:50px;overflow:auto;">
-    <h1>Really Simple Multi-Column Container Demo</h1>
+    <h1 style="font-size:40px;">Really Simple Multi-Column Container Demo</h1>
     <div data-dojo-type="explorations/teno/MultiColumnContainer"
-      data-dojo-props="columns:3,gutter:30,continuation:'container2'"
+      data-dojo-props="columns:3,gutter:15,continuation:'container2'"
       style="position: absolute; top: 150px; left: 50px; width: 600px; height: 600px;">
       <div style="padding: 10px">
         <h1>How does this work?</h1>
@@ -74,10 +69,6 @@
           if they're going to make more shows. Some pilots get picked and
           become television programs. Some don't, become nothing. She
           starred in one of the ones that became nothing.</p>
-        <div style="text-align: center">
-          <img src="explorations/teno/test/themes/images/samuel-l-jackson.jpg"
-            style="width: auto; height: 250px;" alt="Samuel L. Jackson" />
-        </div>
         <h1>Hold on to your butts</h1>
   
         <p>Do you see any Teletubbies in here? Do you see a slender
@@ -88,6 +79,10 @@
           store. And you must think you're in a toy store, because you're
           here shopping for an infant named Jeb.</p>
   
+        <div style="text-align: center">
+          <img src="explorations/teno/test/themes/images/samuel-l-jackson.jpg"
+            style="width: auto; height: 210px;" alt="Samuel L. Jackson" />
+        </div>
         <p>Look, just because I don't be givin' no man a foot massage
           don't make it right for Marsellus to throw Antwone into a glass
           motherfuckin' house, fuckin' up the way the nigger talks.
@@ -110,12 +105,12 @@
       </div>
     </div>
     <div data-dojo-type="explorations/teno/MultiColumnContainer"
-      data-dojo-props="columns:2,gutter:30,continuation:'container3',isContinuation:true"
+      data-dojo-props="columns:2,gutter:20,continuation:'container3',isContinuation:true"
       id="container2"
-      style="position: absolute; top: 250px; left: 800px; width: 600px; height: 700px;background-color:pink;z-index:999">
+      style="position: absolute; top: 250px; left: 800px; width: 600px; height: 700px;background-color:pink;font-family:helvetica,helve,arial,sans-serif;font-size:18px;z-index:999">
     </div>
         <div data-dojo-type="explorations/teno/MultiColumnContainer"
-      data-dojo-props="columns:4,gutter:30,isContinuation:true"
+      data-dojo-props="columns:4,gutter:10,isContinuation:true"
       id="container3"
       style="position: absolute; top: 850px; left: 150px; width: 900px; height: 600px;background-color:#ffffcc">
     </div>
