@@ -38,6 +38,10 @@ function( declare,
          */
         flow : function( /* Element */ srcNode, /* Element[] */ colNodes )
         {
+            if( this._working )
+            {
+                return;
+            }
             if( srcNode )
             {
                 this.sourceNode = srcNode;
@@ -46,20 +50,17 @@ function( declare,
             {
                 this.columnNodes = colNodes;
             }
-            for( var i = 0; i < this.columnNodes.length; i++ )
-            {
-                domConstruct.empty( this.columnNodes[ i ] );
-            }
-            var out = domConstruct.create( this.sourceNode.tagName, {});
+            this._preprocessedNodes = domConstruct.create( this.sourceNode.tagName, {});
             try
             {
-                this._preprocessNodes( this.sourceNode.childNodes, out );
+                this._preprocessNodes( this.sourceNode.childNodes, this._preprocessedNodes );
             }
             catch( e )
             {
                 if( e.message == -1 ) // there was an image that hadn't finished loading so try again in a bit
                 {
-                    setTimeout( lang.hitch( this, this.flow, srcNode, colNodes ), 200 );
+                    this._working = false;
+                    setTimeout( lang.hitch( this, this.flow ), 200 );
                     return;
                 }
                 else
@@ -67,23 +68,23 @@ function( declare,
                     throw( e );
                 }
             }
-            this._flow( this._nodeListToArray( out.childNodes ), this._nodeListToArray( this.columnNodes ) );
-            var tries = this.imageLoadTries;
-            while( tries > 0 )
-            {
-                setTimeout( lang.hitch( this, this.checkLayout ), tries * this.imageLoadInterval );
-                tries--;
-            }
+            this._timeouts = [];
+            this._flow( this._nodeListToArray( lang.clone( this._preprocessedNodes ).childNodes ), this._nodeListToArray( this.columnNodes ) );
         },
         checkLayout : function()
         {
+            if( this._working )
+            {
+                setTimeout( lang.hitch( this, this.checkLayout), this.imageLoadInterval );
+                return;
+            }
             if( this._layoutIsOK() )
             {
                 return;
             }
             else
             {
-                this._flow();
+                this._flow( this._nodeListToArray( lang.clone( this._preprocessedNodes ).childNodes ), this._nodeListToArray( this.columnNodes ) );
             }
         },
         /**
@@ -95,7 +96,18 @@ function( declare,
          */
         _flow : function( /* Node[] */ srcNodes, /* Element[] */ colNodes )
         {
-            var colNode = colNodes.shift();
+            if( this._working )
+            {
+                return;
+            }
+            this._working = true;
+            for( var i = 0; i < colNodes.length; i++ )
+            {
+                domConstruct.empty( colNodes[ i ] );
+            }
+
+            var colIdx = 0;
+            var colNode = colNodes[ colIdx ];
             while( srcNodes.length > 0 )
             {
                 var node = srcNodes.shift();
@@ -107,14 +119,28 @@ function( declare,
                 if( reslt.result !== true ) // some or all didn't fit
                 {
                     srcNodes = [ reslt.overflow ].concat( srcNodes );
-                    colNode = colNodes.shift();
+                    colIdx++;
+                    colNode = colNodes[ colIdx ];
                     if( !colNode ) // we're out of columns
                     {
                         console.log( "Out of columns" );
+                        this._working = false;
+                        this._setupImageLoadInterval();
                         return;
                     }
                 }
             }
+            console.log( "Out of nodes" );
+            this._working = false;
+            this._setupImageLoadInterval();
+        },
+        _setupImageLoadInterval : function()
+        {
+            if( this._checkInterval )
+            {
+                window.clearInterval( this._checkInterval );
+            }
+            this._checkInterval = setInterval( lang.hitch( this, this.checkLayout ), this.imageLoadInterval );
         },
         /**
          * The main recursion. We drill through to the bottom level of the DOM and place nodes
@@ -219,19 +245,12 @@ function( declare,
          * because we will want to e.g. concatenate lists of nodes we're dealing with, and we can't
          * do that with nodeLists.
          */
-        _nodeListToArray : function( /* NodeList */ nodeList, remove )
+        _nodeListToArray : function( /* NodeList */ nodeList )
         {
             var out = [];
             for( var i = 0; i < nodeList.length; i++ )
             {
-                if( remove )
-                {
-                    out.push( nodeList[ i ].parentNode.removeChild( nodeList[ i ] ) );
-                }
-                else
-                {
-                    out.push( nodeList[ i ] );
-                }
+                out.push( nodeList[ i ] );
             }
             return out;
         },

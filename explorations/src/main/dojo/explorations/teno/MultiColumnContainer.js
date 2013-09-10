@@ -32,6 +32,7 @@ function( declare,
             this._events = [];
             this._setupSource();
             this._controller = new MultiColumnFlowController();
+            this.flow();
         },
         flow : function()
         {
