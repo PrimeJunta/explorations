@@ -103,6 +103,16 @@ function( declare,
                     }
                     else
                     {
+                        result.sort( function( a, b ) {
+                            if( a.modifiedDate < b.modifiedDate )
+                            {
+                                return 1;
+                            }
+                            else
+                            {
+                                return -1;
+                            }
+                        });
                         promise.resolve( result );
                     }
                 });
@@ -122,6 +132,28 @@ function( declare,
             downloadFile( fileData, lang.hitch( this, function( resp )
             {
                 promise.resolve( resp );
+            }));
+            return promise;
+        },
+        /**
+         * Looks for a file matching fileName. If present, downloads the newest and resolves with its content. Else resolves with false.
+         * 
+         * @public Deferred
+         */
+        downloadFileByName : function( fileName )
+        {
+            var promise = new Deferred();
+            this.listFiles({ q : "title = '" + fileName + "'" }).then( lang.hitch( this, function( reslt ) {
+                if( reslt[ 0 ] )
+                {
+                    this.downloadFile( reslt[ 0 ] ).then( lang.hitch( this, function( _reslt ) {
+                        promise.resolve( _reslt );
+                    }));
+                }
+                else
+                {
+                    promise.reject( "No matching file." );
+                }
             }));
             return promise;
         },
@@ -203,17 +235,6 @@ function( declare,
             this._assertFileDataIsValid( inputData );
             var promise = new Deferred();
             this.listFiles({ q : "title = '" + inputData.title + "'" }).then( lang.hitch( this, function( reslt ) {
-                console.log( "LIST IS", reslt );
-                reslt.sort( function( a, b ) {
-                    if( a.modifiedDate > b.modifiedDate )
-                    {
-                        return 1;
-                    }
-                    else
-                    {
-                        return -1;
-                    }
-                });
                 if( !reslt[ 0 ] )
                 {
                     console.log( "NO FILE PRESENT, INSERTING" );
@@ -232,6 +253,88 @@ function( declare,
             return promise;
         },
         /**
+         * Look for a file matching fileData.title.  If one exists and its modifiedDate is newer than fileData.modifiedDate,
+         * download it and resolve with "PLEASE_UPDATE", the metadata, and the content. Else updateFile on it with contentData,
+         * and resolve with "SYNCED" and the metadata. Reads boolean "dirty" property from fileData to update a file if the 
+         * modifyDate is the same on both. It will NOT modify the file on the server if it is newer, even if .dirty is set. 
+         * Update, merge, and try again.
+         * 
+         * Usage: 
+         *     this.syncFile({
+         *         title : "myLittleFile.txt",
+         *         mimeType : "text/plain",
+         *         modifiedDate : "2013-10-27T22:35:54.865Z",
+         *         dirty : "true"
+         *     }, "My Little File Content." ).then( function( result ) {
+         *         // do something with the result
+         *     });
+         * 
+         * @public Deferred
+         */
+        syncFile : function( /* Object */ fileData, /* String|byte[] */ contentData )
+        {
+            console.log( "SYNC FILE", fileData, contentData );
+            var dirty = fileData.dirty;
+            delete fileData.dirty;
+            this._assertFileDataIsValid( fileData );
+            var promise = new Deferred();
+            this.listFiles({ q: "title = '" + fileData.title + "'" }).then( lang.hitch( this, function( reslt ) {
+                if( !reslt[ 0 ] )
+                {
+                    if( contentData )
+                    {
+                        console.log( "NO FILE PRESENT, CREATE AND RESOLVE AS CREATED" );
+                        this.insertFile( fileData, contentData ).then( lang.hitch( this, function( _reslt ) {
+                            promise.resolve({
+                                "result" : "CREATED",
+                                "fileData" : _reslt
+                            });
+                        }));
+                    }
+                    else
+                    {
+                        console.log( "NO FILE, NO CONTENT DATA, RESOLVE AS NOT_PRESENT" );
+                        promise.resolve({
+                            "result" : "NOT_PRESENT"
+                        });
+                    }
+                }
+                else
+                {
+                    if( !fileData.modifiedDate || reslt[ 0 ].modifiedDate > fileData.modifiedDate )
+                    {
+                        console.log( "IT'S NEWER, RETRIEVE AND RESOLVE AS PLEASE_UPDATE" )
+                        this.downloadFile( reslt[ 0 ] ).then( lang.hitch( this, function( _reslt ) {
+                            promise.resolve({
+                                "result" : "PLEASE_UPDATE",
+                                "fileData" : reslt[ 0 ],
+                                "contentData" : _reslt
+                            });
+                        }));
+                    }
+                    else if( reslt[ 0 ].modifiedDate == fileData.modifiedDate && !dirty )
+                    {
+                        console.log( "THEY'RE THE SAME, RESOLVE AS UNCHANGED" );
+                        promise.resolve({
+                            "result" : "UNCHANGED",
+                            "fileData" : reslt[ 0 ]
+                        });
+                    }
+                    else
+                    {
+                        console.log( "IT'S OLDER OR DIRTY, UPDATE AND RESOLVE AS UPDATED" );
+                        this.updateFile( reslt[ 0 ].id, fileData, contentData ).then( lang.hitch( this, function( _reslt ) {
+                            promise.resolve({
+                                "result" : "UPDATED",
+                                "fileData" : _reslt
+                            })
+                        }));
+                    }
+                }
+            }));
+            return promise;
+        },
+        /**
          * Updates file fileId (read from a DriveFile) with metadata from fileData, and content from contentData.
          * 
          * @public Deferred
@@ -240,6 +343,8 @@ function( declare,
         {
             var promise = new Deferred();
             this._assertFileDataIsValid( fileData );
+            delete fileData.id;
+            delete fileData.modifiedDate;
             const boundary = '-------314159265358979323846';
             const delimiter = "\r\n--" + boundary + "\r\n";
             const close_delim = "\r\n--" + boundary + "--";
